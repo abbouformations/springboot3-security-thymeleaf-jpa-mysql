@@ -1,10 +1,12 @@
 package ma.cigma.springsecurity.dao;
 
+import ma.cigma.springsecurity.service.model.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 
-import ma.cigma.springsecurity.service.model.User;
+import java.util.Optional;
 
 public interface UserRepository extends JpaRepository<User, Long> {
-	User findByUsername(String userName);
-	User findByEmail(String email);
+    Optional<User> findByUsername(String userName);
+
+    Optional<User> findByEmail(String email);
 }

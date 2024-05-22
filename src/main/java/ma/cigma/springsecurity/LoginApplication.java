@@ -1,6 +1,9 @@
 package ma.cigma.springsecurity;
 
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.AllArgsConstructor;
+import ma.cigma.springsecurity.domaine.RoleVo;
+import ma.cigma.springsecurity.domaine.UserVo;
+import ma.cigma.springsecurity.service.IUserService;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -8,31 +11,66 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
+import java.util.List;
+
 @SpringBootApplication
-public class LoginApplication implements CommandLineRunner {
-	// Pour que le bean BCryptPasswordEncoder soit injectable
+@AllArgsConstructor
+public class LoginApplication  {
+
 	@Bean
 	public PasswordEncoder passwordEncoder() {
 		return new BCryptPasswordEncoder();
 	}
 
-	@Autowired
-	PasswordEncoder bCryptPasswordEncoder;
-
 	public static void main(String[] args) {
 		SpringApplication.run(LoginApplication.class, args);
 	}
 
-	@Override
-	public void run(String... args) throws Exception {
+	@Bean
+	public CommandLineRunner initDatabase(IUserService userService) throws Exception {
+		return (args) -> {
+			userService.cleanDataBase();
+			userService.save(RoleVo.builder().role("ADMIN").build());
+			userService.save(RoleVo.builder().role("CLIENT").build());
 
-		String password = "Passw@rd";
+			RoleVo roleAdmin = userService.getRoleByName("ADMIN");
+			RoleVo roleClient = userService.getRoleByName("CLIENT");
 
-		for (int i = 0; i < 10; i++) {
-			String motdepassCrtypte = bCryptPasswordEncoder.encode(password);
-			System.out.println(motdepassCrtypte);
-		}
 
+			UserVo admin1= UserVo.builder().
+					username("admin1").
+					password("admin1").
+					authorities(List.of(roleAdmin)).
+					enabled(true).
+					accountNonExpired(true).
+					credentialsNonExpired(true).
+					accountNonLocked(true).
+					build();
+
+
+			UserVo client1= UserVo.builder().
+					username("client1").
+					password("client1").
+					authorities(List.of(roleClient)).
+					enabled(true).
+					accountNonExpired(true).
+					credentialsNonExpired(true).
+					accountNonLocked(true).
+					build();
+
+			UserVo sa= UserVo.builder().
+					username("superadmin").
+					password("superadmin").
+					authorities(List.of(roleAdmin,roleClient)).
+					enabled(true).
+					accountNonExpired(true).
+					credentialsNonExpired(true).
+					accountNonLocked(true).
+					build();
+
+			userService.save(admin1);
+			userService.save(client1);
+			userService.save(sa);
+		};
 	}
-
 }

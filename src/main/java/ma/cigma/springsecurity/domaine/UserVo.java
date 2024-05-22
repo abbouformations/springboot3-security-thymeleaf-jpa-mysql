@@ -1,36 +1,28 @@
 package ma.cigma.springsecurity.domaine;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
 
 @Data
 @NoArgsConstructor
-public class UserVo  {
+@AllArgsConstructor
+@Builder
+public class UserVo implements UserDetails {
 	private Long id;
 	private String username;
 	private String password;
-	private List<RoleVo> roles = new ArrayList<RoleVo>();
+	private List<RoleVo> authorities = new ArrayList<RoleVo>();
 
 	private boolean enabled;
 	private boolean accountNonExpired;
 	private boolean credentialsNonExpired;
 	private boolean accountNonLocked;
-
-	public UserVo(String username, String password, List<RoleVo> roles) {
-		this.username = username;
-		this.password = password;
-		this.roles = roles;
-	}
-
-	public UserVo(String username, String password, List<RoleVo> roles, boolean enabled, boolean 
-			accountNonExpired,boolean credentialsNonExpired,boolean accountNonLocked ) {
-		this(username,password,roles);
-		this.enabled=enabled;
-		this.accountNonExpired=accountNonExpired;
-		this.credentialsNonExpired=true;
-		this.accountNonLocked=accountNonLocked;
-	}
 }

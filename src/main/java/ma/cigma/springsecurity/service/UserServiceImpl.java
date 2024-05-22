@@ -1,101 +1,86 @@
 package ma.cigma.springsecurity.service;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
+import lombok.AllArgsConstructor;
 import ma.cigma.springsecurity.dao.RoleRepository;
 import ma.cigma.springsecurity.dao.UserRepository;
-import ma.cigma.springsecurity.domaine.RoleConverter;
 import ma.cigma.springsecurity.domaine.RoleVo;
-import ma.cigma.springsecurity.domaine.UserConverter;
 import ma.cigma.springsecurity.domaine.UserVo;
 import ma.cigma.springsecurity.service.model.Role;
 import ma.cigma.springsecurity.service.model.User;
+import org.modelmapper.ModelMapper;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-@Service("userService")
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
 
-
+@Service
+@AllArgsConstructor
+@Transactional
 public class UserServiceImpl implements IUserService {
+    private UserRepository userRepository;
+    private RoleRepository roleRepository;
+    private PasswordEncoder passwordEncoder;
+    private ModelMapper modelMapper;
 
-	@Autowired
-	private UserRepository userRepository;
-	@Autowired
-	private RoleRepository roleRepository;
-	@Autowired
-	private BCryptPasswordEncoder bCryptPasswordEncoder;
+    @Override
+    public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
+        return modelMapper.map(userRepository.findByUsername(username), UserVo.class);
+    }
 
-	public UserServiceImpl(UserRepository userRepository, RoleRepository roleRepository,
-			BCryptPasswordEncoder bCryptPasswordEncoder) {
-		this.userRepository = userRepository;
-		this.roleRepository = roleRepository;
-		this.bCryptPasswordEncoder = bCryptPasswordEncoder;
-	}
+    @Override
+    public void save(UserVo userVo) {
+        User user = modelMapper.map(userVo, User.class);
+        user.setPassword(passwordEncoder.encode(user.getPassword()));
+        List<Role> rolesPersist = new ArrayList<>();
+        for (Role role : user.getAuthorities()) {
+            Role userRole = roleRepository.findByRole(role.getRole()).
+                    orElseThrow(() -> new RuntimeException("No Role exist"));
+            rolesPersist.add(userRole);
+        }
+        user.setAuthorities(rolesPersist);
+        userRepository.save(user);
+    }
 
-	@Override
-	public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-		User user = userRepository.findByUsername(username);
-		return new org.springframework.security.core.userdetails.User(user.getUsername(), user.getPassword(),
-				user.isEnabled(), user.isAccountNonExpired(), user.isCredentialsNonExpired(), user.isAccountNonLocked(),
-				getAuthorities(user.getRoles()));
-	}
+    @Override
+    public void save(RoleVo roleVo) {
 
-	private Collection<? extends GrantedAuthority> getAuthorities(List<Role> roles) {
-		List<GrantedAuthority> springSecurityAuthorities = new ArrayList<>();
-		roles.forEach(r -> springSecurityAuthorities.add(new SimpleGrantedAuthority(r.getRole())));
-		return springSecurityAuthorities;
-	}
+        roleRepository.save(modelMapper.map(roleVo, Role.class));
+    }
 
-	@Override
-//	@PreAuthorize(value="ADMIN")
-	@Transactional
-	public void save(UserVo userVo) {
-		User user = UserConverter.toBo(userVo);
-		user.setPassword(bCryptPasswordEncoder.encode(user.getPassword()));
-		List<Role> rolesPersist = new ArrayList<>();
-		for (Role role : user.getRoles()) {
-			Role userRole = roleRepository.findByRole(role.getRole()).get(0);
-			rolesPersist.add(userRole);
-		}
-		user.setRoles(rolesPersist);
-		userRepository.save(user);
+    @Override
+    public List<UserVo> getAllUsers() {
 
-	}
+        return userRepository.
+                findAll().
+                stream().
+                map(bo -> modelMapper.map(bo, UserVo.class)).
+                collect(Collectors.toList());
+    }
 
-	@Override
-	public void save(RoleVo roleVo) {
-		// tx.begin();
-		roleRepository.save(RoleConverter.toBo(roleVo));
-		// tx.commit();
-	}
+    @Override
+    public List<RoleVo> getAllRoles() {
 
-	@Override
-	public List<UserVo> getAllUsers() {
-		return UserConverter.toVoList(userRepository.findAll());
-	}
+        return roleRepository.findAll().
+                stream().
+                map(role -> modelMapper.map(role, RoleVo.class)).
+                collect(Collectors.toList());
+    }
 
-	@Override
-	public List<RoleVo> getAllRoles() {
-		return RoleConverter.toVoList(roleRepository.findAll());
-	}
+    @Override
+    public RoleVo getRoleByName(String role) {
+        return modelMapper.map(
+                roleRepository.findByRole(role).orElseThrow(() -> new RuntimeException("No Role exist")),
+                RoleVo.class);
+    }
 
-	@Override
-	public RoleVo getRoleByName(String role) {
-		return RoleConverter.toVo(roleRepository.findByRole(role).get(0));
-	}
-
-	@Override
-	public void cleanDataBase() {
-		userRepository.deleteAll();
-		roleRepository.deleteAll();
-	}
+    @Override
+    public void cleanDataBase() {
+        userRepository.deleteAll();
+        roleRepository.deleteAll();
+    }
 }

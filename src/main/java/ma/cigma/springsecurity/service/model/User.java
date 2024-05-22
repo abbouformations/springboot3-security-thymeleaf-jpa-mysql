@@ -3,26 +3,21 @@ package ma.cigma.springsecurity.service.model;
 import java.util.ArrayList;
 import java.util.List;
 
-import javax.persistence.CascadeType;
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.Id;
-import javax.persistence.JoinColumn;
-import javax.persistence.JoinTable;
-import javax.persistence.ManyToMany;
-import javax.persistence.Table;
-import javax.validation.constraints.NotEmpty;
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.Id;
+import jakarta.persistence.ManyToMany;
+import jakarta.validation.constraints.NotEmpty;
 
-import org.hibernate.validator.constraints.Length;
-import org.springframework.security.core.userdetails.UserDetails;
 
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.hibernate.validator.constraints.Length;
 
 @Data
 @Entity
-@Table(name = "user")
 @NoArgsConstructor
 public class User  {
 	@Id
@@ -45,7 +40,5 @@ public class User  {
 	private String email;
 
 	@ManyToMany(cascade = CascadeType.ALL)
-	// @JoinTable(name = "user_role", joinColumns = @JoinColumn(name =
-	// "user_id"), inverseJoinColumns = @JoinColumn(name = "role_id"))
-	private List<Role> roles = new ArrayList<Role>();
+	private List<Role> authorities = new ArrayList<Role>();
 }

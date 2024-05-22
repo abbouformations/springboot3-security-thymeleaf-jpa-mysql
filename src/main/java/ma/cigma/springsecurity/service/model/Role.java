@@ -1,34 +1,25 @@
 package ma.cigma.springsecurity.service.model;
 
-import java.util.List;
-
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
-import javax.persistence.ManyToMany;
-import javax.persistence.Table;
-
+import jakarta.persistence.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.List;
+
 @Data
 @Entity
-@Table(name = "role")
 @NoArgsConstructor
 public class Role {
-	@Id
-	@GeneratedValue(strategy = GenerationType.AUTO)
-	@Column(name = "role_id")
-	private int id;
-	@Column(name = "role")
-	private String role;
-	
-	@ManyToMany(mappedBy="roles")
-	private List<User> users;
+    @Id
+    @GeneratedValue
+    private int id;
+    @Column(unique = true)
+    private String role;
 
-	public Role(String role) {
-		this.role = role;
-	}
+    @ManyToMany(mappedBy = "authorities")
+    private List<User> users;
+
+    public Role(String role) {
+        this.role = role;
+    }
 }
